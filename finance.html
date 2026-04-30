@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>손익 계산기</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f0f2f5;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 16px;
+    }
+
+    h1 {
+      font-size: 1.6rem;
+      color: #1a1a2e;
+      margin-bottom: 32px;
+      letter-spacing: -0.5px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      width: 100%;
+      max-width: 900px;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+    }
+
+    .card.revenue { border-top: 4px solid #3b82f6; }
+    .card.cost    { border-top: 4px solid #ef4444; }
+
+    .card h2 {
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .card.revenue h2 { color: #2563eb; }
+    .card.cost h2    { color: #dc2626; }
+
+    .section-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: #94a3b8;
+      margin: 14px 0 8px;
+    }
+
+    .section-label.first { margin-top: 12px; }
+
+    .separator {
+      border: none;
+      border-top: 1px dashed #e2e8f0;
+      margin: 14px 0;
+    }
+
+    .row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 8px;
+      align-items: center;
+    }
+
+    .name-fixed {
+      flex: 1.3;
+      padding: 8px 10px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      color: #475569;
+      font-weight: 600;
+      cursor: default;
+      user-select: none;
+    }
+
+    .row input[type="text"] {
+      flex: 1.3;
+      padding: 8px 10px;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      color: #334155;
+      outline: none;
+      transition: border 0.2s;
+    }
+
+    .row input[type="number"] {
+      flex: 1;
+      padding: 8px 10px;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      color: #334155;
+      outline: none;
+      text-align: right;
+      transition: border 0.2s;
+    }
+
+    .card.revenue input:focus {
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59,130,246,0.12);
+    }
+
+    .card.cost input:focus {
+      border-color: #ef4444;
+      box-shadow: 0 0 0 3px rgba(239,68,68,0.12);
+    }
+
+    .unit {
+      font-size: 0.8rem;
+      color: #94a3b8;
+      white-space: nowrap;
+    }
+
+    .subtotal {
+      margin-top: 16px;
+      padding-top: 14px;
+      border-top: 2px solid #e2e8f0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.92rem;
+    }
+
+    .subtotal span:first-child {
+      font-weight: 600;
+      color: #64748b;
+    }
+
+    .subtotal .value {
+      font-weight: 700;
+      font-size: 1.05rem;
+    }
+
+    .card.revenue .subtotal .value { color: #2563eb; }
+    .card.cost    .subtotal .value { color: #dc2626; }
+
+    /* 결과 카드 */
+    .result-card {
+      grid-column: 1 / -1;
+      background: #fff;
+      border-radius: 16px;
+      padding: 28px 32px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .result-item { text-align: center; }
+
+    .result-item .label {
+      font-size: 0.82rem;
+      color: #94a3b8;
+      margin-bottom: 6px;
+      font-weight: 500;
+    }
+
+    .result-item .amount {
+      font-size: 1.45rem;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+    }
+
+    .result-item .amount.blue    { color: #2563eb; }
+    .result-item .amount.red-c   { color: #dc2626; }
+    .result-item .amount.profit  { color: #16a34a; }
+    .result-item .amount.loss    { color: #dc2626; }
+    .result-item .amount.neutral { color: #64748b; }
+
+    .divider {
+      width: 1px;
+      height: 50px;
+      background: #e2e8f0;
+    }
+
+    /* 초기화 버튼 */
+    .reset-wrap {
+      grid-column: 1 / -1;
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    button.reset-btn {
+      padding: 10px 24px;
+      background: #fff;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      color: #64748b;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s, color 0.15s;
+    }
+
+    button.reset-btn:hover {
+      background: #fee2e2;
+      border-color: #ef4444;
+      color: #dc2626;
+    }
+
+    @media (max-width: 620px) {
+      .grid { grid-template-columns: 1fr; }
+      .result-card { flex-direction: column; gap: 20px; }
+      .divider { width: 60px; height: 1px; }
+    }
+  </style>
+</head>
+<body>
+
+  <h1>손익 계산기</h1>
+
+  <div class="grid">
+
+    <!-- 매출 카드 -->
+    <div class="card revenue">
+      <h2>매출 항목</h2>
+
+      <div class="section-label first">고정 항목</div>
+      <div class="row">
+        <div class="name-fixed">H/W (하드웨어)</div>
+        <input type="number" class="r-amount" placeholder="0" min="0">
+        <span class="unit">만원</span>
+      </div>
+      <div class="row">
+        <div class="name-fixed">S/W (소프트웨어)</div>
+        <input type="number" class="r-amount" placeholder="0" min="0">
+        <span class="unit">만원</span>
+      </div>
+      <div class="row">
+        <div class="name-fixed">컨설팅</div>
+        <input type="number" class="r-amount" placeholder="0" min="0">
+        <span class="unit">만원</span>
+      </div>
+      <div class="row">
+        <div class="name-fixed">서비스</div>
+        <input type="number" class="r-amount" placeholder="0" min="0">
+        <span class="unit">만원</span>
+      </div>
+      <div class="row">
+        <div class="name-fixed">기타 매출</div>
+        <input type="number" class="r-amount" placeholder="0" min="0">
+        <span class="unit">만원</span>
+      </div>
+
+      <hr class="separator">
+      <div class="section-label">추가 항목</div>
+      <div class="row">
+        <input type="text" class="r-name" placeholder="항목명">
+        <input type="number" class="r-amount" placeholder="0" min="0">
+        <span class="unit">만원</span>
+      </div>
+      <div class="row">
+        <input type="text" class="r-name" placeholder="항목명">
+        <input type="number" class="r-amount" placeholder="0" min="0">
+        <span class="unit">만원</span>
+      </div>
+      <div class="row">
+        <input type="text" class="r-name" placeholder="항목명">
+        <input type="number" class="r-amount" placeholder="0" min="0">
+        <span class="unit">만원</span>
+      </div>
+      <div class="row">
+        <input type="text" class="r-name" placeholder="항목명">
+        <input type="number" class="r-amount" placeholder="0" min="0">
+        <span class="unit">만원</span>
+      </div>
+      <div class="row">
+        <input type="text" class="r-name" placeholder="항목명">
+        <input type="number" class="r-amount" placeholder="0" min="0">
+        <span class="unit">만원</span>
+      </div>
+
+      <div class="subtotal">
+        <span>총 매출</span>
+        <span class="value" id="total-revenue">0 만원</span>
+      </div>
+    </div>
+
+    <!-- 비용 카드 -->
+    <div class="card cost">
+      <h2>비용 항목</h2>
+
+      <div class="section-label first">고정 항목</div>
+      <div class="row">
+        <div class="name-fixed">인건비</div>
+        <input type="number" class="c-amount" placeholder="0" min="0">
+        <span class="unit">만원</span>
+      </div>
+      <div class="row">
+        <div class="name-fixed">외주비</div>
+        <input type="number" class="c-amount" placeholder="0" min="0">
+        <span class="unit">만원</span>
+      </div>
+      <div class="row">
+        <div class="name-fixed">장비·인프라</div>
+        <input type="number" class="c-amount" placeholder="0" min="0">
+        <span class="unit">만원</span>
+      </div>
+      <div class="row">
+        <div class="name-fixed">출장비</div>
+        <input type="number" class="c-amount" placeholder="0" min="0">
+        <span class="unit">만원</span>
+      </div>
+      <div class="row">
+        <div class="name-fixed">기타 비용</div>
+        <input type="number" class="c-amount" placeholder="0" min="0">
+        <span class="unit">만원</span>
+      </div>
+
+      <hr class="separator">
+      <div class="section-label">추가 항목</div>
+      <div class="row">
+        <input type="text" class="c-name" placeholder="항목명">
+        <input type="number" class="c-amount" placeholder="0" min="0">
+        <span class="unit">만원</span>
+      </div>
+      <div class="row">
+        <input type="text" class="c-name" placeholder="항목명">
+        <input type="number" class="c-amount" placeholder="0" min="0">
+        <span class="unit">만원</span>
+      </div>
+      <div class="row">
+        <input type="text" class="c-name" placeholder="항목명">
+        <input type="number" class="c-amount" placeholder="0" min="0">
+        <span class="unit">만원</span>
+      </div>
+      <div class="row">
+        <input type="text" class="c-name" placeholder="항목명">
+        <input type="number" class="c-amount" placeholder="0" min="0">
+        <span class="unit">만원</span>
+      </div>
+      <div class="row">
+        <input type="text" class="c-name" placeholder="항목명">
+        <input type="number" class="c-amount" placeholder="0" min="0">
+        <span class="unit">만원</span>
+      </div>
+
+      <div class="subtotal">
+        <span>총 비용</span>
+        <span class="value" id="total-cost">0 만원</span>
+      </div>
+    </div>
+
+    <!-- 결과 카드 -->
+    <div class="result-card">
+      <div class="result-item">
+        <div class="label">총 매출</div>
+        <div class="amount blue" id="res-revenue">0 만원</div>
+      </div>
+      <div class="divider"></div>
+      <div class="result-item">
+        <div class="label">총 비용</div>
+        <div class="amount red-c" id="res-cost">0 만원</div>
+      </div>
+      <div class="divider"></div>
+      <div class="result-item">
+        <div class="label">순이익</div>
+        <div class="amount neutral" id="res-profit">0 만원</div>
+      </div>
+      <div class="divider"></div>
+      <div class="result-item">
+        <div class="label">이익률</div>
+        <div class="amount neutral" id="res-margin">- %</div>
+      </div>
+    </div>
+
+    <!-- 초기화 버튼 -->
+    <div class="reset-wrap">
+      <button class="reset-btn" onclick="resetAll()">초기화</button>
+    </div>
+
+  </div>
+
+  <script>
+    function fmt(n) {
+      return n.toLocaleString('ko-KR') + ' 만원';
+    }
+
+    function calculate() {
+      const rAmounts = [...document.querySelectorAll('.r-amount')].map(el => parseFloat(el.value) || 0);
+      const cAmounts = [...document.querySelectorAll('.c-amount')].map(el => parseFloat(el.value) || 0);
+
+      const totalRevenue = rAmounts.reduce((a, b) => a + b, 0);
+      const totalCost    = cAmounts.reduce((a, b) => a + b, 0);
+      const profit = totalRevenue - totalCost;
+      const margin = totalRevenue > 0 ? (profit / totalRevenue * 100) : null;
+
+      document.getElementById('total-revenue').textContent = fmt(totalRevenue);
+      document.getElementById('total-cost').textContent    = fmt(totalCost);
+      document.getElementById('res-revenue').textContent   = fmt(totalRevenue);
+      document.getElementById('res-cost').textContent      = fmt(totalCost);
+
+      const profitEl = document.getElementById('res-profit');
+      profitEl.textContent = (profit >= 0 ? '+' : '') + fmt(profit);
+      profitEl.className   = 'amount ' + (profit > 0 ? 'profit' : profit < 0 ? 'loss' : 'neutral');
+
+      const marginEl = document.getElementById('res-margin');
+      if (margin === null) {
+        marginEl.textContent = '- %';
+        marginEl.className   = 'amount neutral';
+      } else {
+        marginEl.textContent = (margin >= 0 ? '+' : '') + margin.toFixed(1) + ' %';
+        marginEl.className   = 'amount ' + (margin > 0 ? 'profit' : margin < 0 ? 'loss' : 'neutral');
+      }
+    }
+
+    function resetAll() {
+      if (!confirm('모든 입력값을 초기화하시겠습니까?')) return;
+      document.querySelectorAll('input[type="number"]').forEach(el => el.value = '');
+      document.querySelectorAll('input[type="text"]').forEach(el => el.value = '');
+      calculate();
+    }
+
+    document.querySelectorAll('input[type="number"]').forEach(el => {
+      el.addEventListener('input', calculate);
+    });
+  </script>
+
+</body>
+</html>
