@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>업무 현황 대시보드</title>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --indigo:   #6366f1;
+      --indigo-lt:#ede9fe;
+      --blue:     #3b82f6;
+      --blue-lt:  #eff6ff;
+      --green:    #10b981;
+      --green-lt: #d1fae5;
+      --amber:    #f59e0b;
+      --amber-lt: #fef3c7;
+      --rose:     #f43f5e;
+      --rose-lt:  #fff1f2;
+      --purple:   #9333ea;
+      --purple-lt:#faf5ff;
+      --gray-50:  #f8f9fb;
+      --gray-100: #f0f2f5;
+      --gray-200: #e5e7eb;
+      --gray-400: #9ca3af;
+      --gray-500: #6b7280;
+      --gray-700: #374151;
+      --gray-900: #111827;
+      --radius:   16px;
+      --shadow:   0 2px 14px rgba(0,0,0,.07);
+      --shadow-hover: 0 8px 28px rgba(0,0,0,.13);
+    }
+
+    body {
+      font-family: 'Segoe UI', 'Apple SD Gothic Neo', sans-serif;
+      background: var(--gray-100);
+      min-height: 100vh;
+      padding: 40px 24px 60px;
+      color: var(--gray-900);
+    }
+
+    .container { max-width: 1060px; margin: 0 auto; }
+
+    /* ── Page Header ── */
+    .page-header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      margin-bottom: 36px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .page-header h1 {
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: -0.6px;
+    }
+    .page-header .date {
+      font-size: 13px;
+      color: var(--gray-400);
+      background: #fff;
+      border: 1px solid var(--gray-200);
+      border-radius: 99px;
+      padding: 5px 14px;
+    }
+
+    /* ── Section title ── */
+    .section-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--gray-500);
+      text-transform: uppercase;
+      letter-spacing: 0.7px;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .section-title::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--gray-200);
+    }
+
+    /* ══════════════════════════════
+       SECTION 1 — Summary Cards
+    ══════════════════════════════ */
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 16px;
+      margin-bottom: 40px;
+    }
+
+    .summary-card {
+      background: #fff;
+      border-radius: var(--radius);
+      padding: 24px 22px;
+      box-shadow: var(--shadow);
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      position: relative;
+      overflow: hidden;
+      transition: transform .2s, box-shadow .2s;
+    }
+    .summary-card:hover {
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-hover);
+    }
+    .summary-card::after {
+      content: '';
+      position: absolute;
+      right: -18px;
+      bottom: -18px;
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      opacity: .08;
+    }
+
+    .summary-card.total   { border-top: 3px solid var(--indigo); }
+    .summary-card.ongoing { border-top: 3px solid var(--blue);   }
+    .summary-card.done    { border-top: 3px solid var(--green);  }
+    .summary-card.members { border-top: 3px solid var(--amber);  }
+
+    .summary-card.total::after   { background: var(--indigo); }
+    .summary-card.ongoing::after { background: var(--blue);   }
+    .summary-card.done::after    { background: var(--green);  }
+    .summary-card.members::after { background: var(--amber);  }
+
+    .s-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      flex-shrink: 0;
+    }
+    .summary-card.total   .s-icon { background: var(--indigo-lt); }
+    .summary-card.ongoing .s-icon { background: var(--blue-lt);   }
+    .summary-card.done    .s-icon { background: var(--green-lt);  }
+    .summary-card.members .s-icon { background: var(--amber-lt);  }
+
+    .s-body { display: flex; flex-direction: column; gap: 2px; }
+    .s-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--gray-400);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .s-value {
+      font-size: 32px;
+      font-weight: 800;
+      line-height: 1;
+      letter-spacing: -1px;
+    }
+    .summary-card.total   .s-value { color: var(--indigo); }
+    .summary-card.ongoing .s-value { color: var(--blue);   }
+    .summary-card.done    .s-value { color: var(--green);  }
+    .summary-card.members .s-value { color: var(--amber);  }
+
+    .s-sub {
+      font-size: 11px;
+      color: var(--gray-400);
+      margin-top: 2px;
+    }
+
+    /* ══════════════════════════════
+       SECTION 2 — Project Table
+    ══════════════════════════════ */
+    .table-section { margin-bottom: 40px; }
+
+    .table-card {
+      background: #fff;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    table { width: 100%; border-collapse: collapse; }
+
+    thead th {
+      background: var(--gray-50);
+      padding: 13px 22px;
+      text-align: left;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.7px;
+      color: var(--gray-400);
+      border-bottom: 1px solid var(--gray-200);
+    }
+
+    tbody tr { border-bottom: 1px solid var(--gray-100); transition: background .15s; }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: #fafbff; }
+
+    tbody td { padding: 15px 22px; font-size: 14px; color: var(--gray-700); }
+
+    .td-num {
+      font-weight: 700;
+      color: var(--gray-400);
+      font-size: 13px;
+      width: 52px;
+    }
+    .td-name { font-weight: 600; color: var(--gray-900); }
+    .td-owner { font-size: 13px; }
+
+    /* Status badges */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 11px;
+      border-radius: 99px;
+      font-size: 12px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .badge-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+    }
+    .badge-ongoing  { background: var(--blue-lt);   color: var(--blue);   }
+    .badge-ongoing  .badge-dot { background: var(--blue);   animation: blink 1.8s infinite; }
+    .badge-done     { background: var(--green-lt);  color: #065f46; }
+    .badge-done     .badge-dot { background: var(--green);  }
+    .badge-hold     { background: var(--rose-lt);   color: var(--rose);   }
+    .badge-hold     .badge-dot { background: var(--rose);   }
+    .badge-review   { background: var(--purple-lt); color: var(--purple); }
+    .badge-review   .badge-dot { background: var(--purple); animation: blink 1.8s infinite; }
+
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+    /* Progress bar */
+    .prog-wrap { display: flex; align-items: center; gap: 10px; }
+    .prog-bar {
+      flex: 1;
+      min-width: 72px;
+      height: 6px;
+      background: var(--gray-100);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+    .prog-fill { height: 100%; border-radius: 99px; }
+    .prog-fill.c-high { background: linear-gradient(90deg, #10b981, #34d399); }
+    .prog-fill.c-mid  { background: linear-gradient(90deg, #6366f1, #818cf8); }
+    .prog-fill.c-low  { background: linear-gradient(90deg, #f43f5e, #fb7185); }
+    .prog-pct { font-size: 13px; font-weight: 700; color: var(--gray-500); width: 36px; text-align: right; }
+
+    /* ══════════════════════════════
+       SECTION 3 — Team Cards
+    ══════════════════════════════ */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+      gap: 18px;
+    }
+
+    .member-card {
+      background: #fff;
+      border-radius: var(--radius);
+      padding: 26px 22px 22px;
+      box-shadow: var(--shadow);
+      position: relative;
+      overflow: hidden;
+      transition: transform .2s, box-shadow .2s;
+    }
+    .member-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-hover);
+    }
+    .member-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 4px;
+    }
+    .member-card.active   ::before, .member-card.active::before   { background: linear-gradient(90deg, var(--indigo), #818cf8); }
+    .member-card.business::before { background: linear-gradient(90deg, var(--amber), #fbbf24); }
+    .member-card.vacation::before { background: linear-gradient(90deg, var(--green), #34d399); }
+
+    .mc-top { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; }
+
+    .avatar {
+      width: 52px; height: 52px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px; font-weight: 800;
+      flex-shrink: 0;
+    }
+    .member-card.active   .avatar { background: var(--indigo-lt); color: #7c3aed; }
+    .member-card.business .avatar { background: var(--amber-lt);  color: #b45309; }
+    .member-card.vacation .avatar { background: var(--green-lt);  color: #065f46; }
+
+    .mc-info .mc-name  { font-size: 16px; font-weight: 700; color: var(--gray-900); }
+    .mc-info .mc-role  { font-size: 12px; color: var(--gray-400); margin-top: 2px; }
+
+    .mc-divider { height: 1px; background: var(--gray-100); margin-bottom: 14px; }
+
+    .mc-task-label {
+      font-size: 10px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.7px;
+      color: var(--gray-400); margin-bottom: 5px;
+    }
+    .mc-task {
+      font-size: 13px; color: #4b5563;
+      line-height: 1.55; margin-bottom: 16px;
+    }
+
+    /* member status badge */
+    .ms-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 5px 12px; border-radius: 99px;
+      font-size: 12px; font-weight: 600;
+    }
+    .ms-dot { width: 7px; height: 7px; border-radius: 50%; }
+
+    .member-card.active   .ms-badge { background: var(--indigo-lt); color: #7c3aed; }
+    .member-card.active   .ms-dot   { background: var(--indigo); animation: blink 1.8s infinite; }
+    .member-card.business .ms-badge { background: var(--amber-lt);  color: #b45309; }
+    .member-card.business .ms-dot   { background: var(--amber);  animation: blink 1.8s infinite; }
+    .member-card.vacation .ms-badge { background: var(--green-lt);  color: #065f46; }
+    .member-card.vacation .ms-dot   { background: var(--green);  }
+
+    /* ── Footer ── */
+    .page-footer {
+      margin-top: 20px;
+      text-align: right;
+      font-size: 12px;
+      color: var(--gray-400);
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Page Header -->
+  <div class="page-header">
+    <h1>업무 현황 대시보드</h1>
+    <span class="date">2026년 4월 30일 기준</span>
+  </div>
+
+  <!-- ① Summary Cards -->
+  <p class="section-title">요약</p>
+  <div class="summary-grid">
+    <div class="summary-card total">
+      <div class="s-icon">📁</div>
+      <div class="s-body">
+        <span class="s-label">전체 프로젝트</span>
+        <span class="s-value">5</span>
+        <span class="s-sub">이번 분기 등록</span>
+      </div>
+    </div>
+    <div class="summary-card ongoing">
+      <div class="s-icon">🚀</div>
+      <div class="s-body">
+        <span class="s-label">진행 중</span>
+        <span class="s-value">3</span>
+        <span class="s-sub">현재 활성 프로젝트</span>
+      </div>
+    </div>
+    <div class="summary-card done">
+      <div class="s-icon">✅</div>
+      <div class="s-body">
+        <span class="s-label">완료</span>
+        <span class="s-value">1</span>
+        <span class="s-sub">납기 내 완료</span>
+      </div>
+    </div>
+    <div class="summary-card members">
+      <div class="s-icon">👥</div>
+      <div class="s-body">
+        <span class="s-label">팀원 수</span>
+        <span class="s-value">6</span>
+        <span class="s-sub">재직 4 · 출장 2</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ② Project Table -->
+  <p class="section-title">프로젝트 현황</p>
+  <div class="table-section">
+    <div class="table-card">
+      <table>
+        <thead>
+          <tr>
+            <th>번호</th>
+            <th>프로젝트명</th>
+            <th>담당자</th>
+            <th>상태</th>
+            <th>완료율</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="td-num">01</td>
+            <td class="td-name">쇼핑몰 리뉴얼</td>
+            <td class="td-owner">김지수</td>
+            <td><span class="badge badge-ongoing"><span class="badge-dot"></span>진행 중</span></td>
+            <td>
+              <div class="prog-wrap">
+                <div class="prog-bar"><div class="prog-fill c-mid" style="width:72%"></div></div>
+                <span class="prog-pct">72%</span>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td class="td-num">02</td>
+            <td class="td-name">사내 인트라넷 구축</td>
+            <td class="td-owner">박민준</td>
+            <td><span class="badge badge-done"><span class="badge-dot"></span>완료</span></td>
+            <td>
+              <div class="prog-wrap">
+                <div class="prog-bar"><div class="prog-fill c-high" style="width:100%"></div></div>
+                <span class="prog-pct">100%</span>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td class="td-num">03</td>
+            <td class="td-name">모바일 앱 고도화</td>
+            <td class="td-owner">이서연</td>
+            <td><span class="badge badge-review"><span class="badge-dot"></span>검토 중</span></td>
+            <td>
+              <div class="prog-wrap">
+                <div class="prog-bar"><div class="prog-fill c-mid" style="width:55%"></div></div>
+                <span class="prog-pct">55%</span>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td class="td-num">04</td>
+            <td class="td-name">데이터 분석 플랫폼</td>
+            <td class="td-owner">최도윤</td>
+            <td><span class="badge badge-hold"><span class="badge-dot"></span>보류</span></td>
+            <td>
+              <div class="prog-wrap">
+                <div class="prog-bar"><div class="prog-fill c-low" style="width:20%"></div></div>
+                <span class="prog-pct">20%</span>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td class="td-num">05</td>
+            <td class="td-name">AI 챗봇 도입</td>
+            <td class="td-owner">한예린</td>
+            <td><span class="badge badge-ongoing"><span class="badge-dot"></span>진행 중</span></td>
+            <td>
+              <div class="prog-wrap">
+                <div class="prog-bar"><div class="prog-fill c-mid" style="width:88%"></div></div>
+                <span class="prog-pct">88%</span>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ③ Team Cards -->
+  <p class="section-title">팀원 현황</p>
+  <div class="cards-grid">
+
+    <div class="member-card active">
+      <div class="mc-top">
+        <div class="avatar">김</div>
+        <div class="mc-info">
+          <div class="mc-name">김지수</div>
+          <div class="mc-role">프론트엔드 개발자</div>
+        </div>
+      </div>
+      <div class="mc-divider"></div>
+      <div class="mc-task-label">담당 업무</div>
+      <div class="mc-task">쇼핑몰 UI 리뉴얼 및 반응형 퍼블리싱</div>
+      <span class="ms-badge"><span class="ms-dot"></span>재직 중</span>
+    </div>
+
+    <div class="member-card business">
+      <div class="mc-top">
+        <div class="avatar">박</div>
+        <div class="mc-info">
+          <div class="mc-name">박민준</div>
+          <div class="mc-role">백엔드 개발자</div>
+        </div>
+      </div>
+      <div class="mc-divider"></div>
+      <div class="mc-task-label">담당 업무</div>
+      <div class="mc-task">API 서버 설계 및 데이터베이스 최적화</div>
+      <span class="ms-badge"><span class="ms-dot"></span>출장 중</span>
+    </div>
+
+    <div class="member-card vacation">
+      <div class="mc-top">
+        <div class="avatar">이</div>
+        <div class="mc-info">
+          <div class="mc-name">이서연</div>
+          <div class="mc-role">UI/UX 디자이너</div>
+        </div>
+      </div>
+      <div class="mc-divider"></div>
+      <div class="mc-task-label">담당 업무</div>
+      <div class="mc-task">모바일 앱 화면 설계 및 프로토타이핑</div>
+      <span class="ms-badge"><span class="ms-dot"></span>휴가 중</span>
+    </div>
+
+    <div class="member-card active">
+      <div class="mc-top">
+        <div class="avatar">최</div>
+        <div class="mc-info">
+          <div class="mc-name">최도윤</div>
+          <div class="mc-role">데이터 엔지니어</div>
+        </div>
+      </div>
+      <div class="mc-divider"></div>
+      <div class="mc-task-label">담당 업무</div>
+      <div class="mc-task">데이터 파이프라인 구축 및 분석 플랫폼 개발</div>
+      <span class="ms-badge"><span class="ms-dot"></span>재직 중</span>
+    </div>
+
+    <div class="member-card business">
+      <div class="mc-top">
+        <div class="avatar">한</div>
+        <div class="mc-info">
+          <div class="mc-name">한예린</div>
+          <div class="mc-role">AI 엔지니어</div>
+        </div>
+      </div>
+      <div class="mc-divider"></div>
+      <div class="mc-task-label">담당 업무</div>
+      <div class="mc-task">LLM 기반 챗봇 모델 파인튜닝 및 배포</div>
+      <span class="ms-badge"><span class="ms-dot"></span>출장 중</span>
+    </div>
+
+    <div class="member-card active">
+      <div class="mc-top">
+        <div class="avatar">정</div>
+        <div class="mc-info">
+          <div class="mc-name">정승호</div>
+          <div class="mc-role">프로젝트 매니저</div>
+        </div>
+      </div>
+      <div class="mc-divider"></div>
+      <div class="mc-task-label">담당 업무</div>
+      <div class="mc-task">전체 프로젝트 일정 관리 및 이해관계자 조율</div>
+      <span class="ms-badge"><span class="ms-dot"></span>재직 중</span>
+    </div>
+
+  </div>
+
+  <div class="page-footer">마지막 업데이트: 2026년 4월 30일</div>
+</div>
+</body>
+</html>
